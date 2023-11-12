@@ -1,0 +1,95 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include "inc/tm4c123gh6pm.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_ints.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/gpio.h"
+#include "driverlib/timer.h"
+#include "driverlib/systick.h"
+#include "driverlib/uart.h"
+
+#define Sens_1 GPIO_PIN_0 // Primer sensor infrarojo (Puerto B)
+#define Sens_2 GPIO_PIN_1 // segundo sensor infrarojo (Puerto B)
+#define push_1 GPIO_PIN_7 // Primer push  de la tiva
+#define push_2 GPIO_PIN_4 // Segundo push de la tiva
+void config_UART(void);
+
+int main(void) {
+    // Configuración del oscilador externo, usando PLL y teniendo una frecuencia de 40MHz
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
+
+    // Se habilita el reloj para el puerto F
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+    // Se habilita el reloj para el puerto B
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+
+    //Configuracion de los pines de entrada
+    GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, Sens_1 | Sens_2 | push_1 ); // Puerto B
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE,  push_2 ); // Puerto F
+
+    // Configurar las salidas
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3); // Puerto F (PIN_1=LED_ROJA, PIN_2 =LED_AZUL, PIN_3=LED_VERDE
+    GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6); // Puerto B
+
+
+    //config_UART();
+
+    while(1) {
+
+        // Sensor 1
+        if (GPIOPinRead(GPIO_PORTB_BASE, Sens_1) == 0)
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_3, GPIO_PIN_3); // Enceinde la led verde de la tiva
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1, 0);          // Apaga la led roja de la tiva
+
+        }
+        else
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_1, GPIO_PIN_1); // Enciende la led roja de la tiva
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_3, 0);          // Apaga la led verde de la tiva
+        }
+
+        // Sensor 2
+        if (GPIOPinRead(GPIO_PORTB_BASE, Sens_2) == 0)
+        {
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_2, GPIO_PIN_2); // Enciende la led azul de la tiva
+            GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_2, 0);          // Apaga la led del pin 2 del puerto B
+
+        }
+        else
+        {
+            GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_2, GPIO_PIN_2); // Enciende la led del pin 2 del pu
+            GPIOPinWrite(GPIO_PORTF_BASE,GPIO_PIN_2, 0);          // Apaga la led azul de la tiva
+        }
+
+        // Pulsador 1
+        if (GPIOPinRead(GPIO_PORTB_BASE, push_1) == 0)
+        {
+          GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_3, GPIO_PIN_3);
+          GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_4, 0);
+
+        }
+        else
+        {
+           GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_4, GPIO_PIN_4);
+           GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_3, 0);
+        }
+
+        // Pulsador 2
+        if (GPIOPinRead(GPIO_PORTF_BASE, push_2) == 0)
+        {
+           GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_5, GPIO_PIN_5);
+           GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_6, 0);
+
+         }
+         else
+         {
+           GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_6, GPIO_PIN_6);
+           GPIOPinWrite(GPIO_PORTB_BASE,GPIO_PIN_5, 0);
+         }
+
+        } // while
+} // Int main
